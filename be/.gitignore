@@ -8,5 +8,6 @@ Pipfile*
 acc-key.json
 init_db.py
 spot.py
+t.py
 test.py
 test2.py
