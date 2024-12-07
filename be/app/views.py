@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, Request, Response, status, HTTPException, Form, UploadFile, File
 from typing import Annotated
 from app.auth.bearer import JWTBearer
-from app.db.redis import client as redis_client
+from app.db.redis import rdb as redis_client
 from app.auth.handler import sign_jwt, is_same_user, is_good_token
 from app.controller import publish_message
 from app.schemas import RequestUser, PlaylistCreate, PredictCreate
@@ -88,20 +88,18 @@ async def predict_mood_and_generate_playlist(
     key = f'prediction:{id}'
 
     db_playlist = None
-    while True:
-        if redis_client.exists(key):
-            cached_message = redis_client.get(key)
-            json_object = json.loads(cached_message)
-            playlist = PlaylistCreate(
-                id=id,
-                mood=json_object['mood'],
-                song_ids=json_object['song_ids'],
-                user_id=user_id
-            )
-            db_playlist = create_playlist(playlist)
-            break
-        time.sleep(0.5)
-        
+    
+    if redis_client.exists(key):
+        cached_message = redis_client.get(key)
+        json_object = json.loads(cached_message)
+        playlist = PlaylistCreate(
+            id=id,
+            mood=json_object['mood'],
+            song_ids=json_object['song_ids'],
+            user_id=user_id
+        )
+        db_playlist = await create_playlist(playlist)
+           
     r.status_code = status.HTTP_201_CREATED
     return db_playlist
 

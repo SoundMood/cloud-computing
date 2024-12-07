@@ -1,13 +1,8 @@
-import redis
-from decouple import config
+from app.settings import REDIS_PORT, REDIS_HOST
+from rediscluster import RedisCluster
+endpoints = [{"host": REDIS_HOST, "port": REDIS_PORT}]
 
-def create_redis():
-  return redis.ConnectionPool(
-    host=config("REDIS_HOST"), 
-    port=config("REDIS_PORT"), 
-    db=0, 
-    decode_responses=True
-  )
-
-pool = create_redis()
-client = redis.Redis(connection_pool=pool)
+rdb = RedisCluster(
+    startup_nodes=endpoints,
+    skip_full_coverage_check=True, # Required for Memorystore
+    decode_responses = True)

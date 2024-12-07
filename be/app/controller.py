@@ -1,7 +1,7 @@
 from google.cloud import pubsub_v1
 import json
 import app.settings as settings
-from app.db.redis import client as redis_client
+from app.db.redis import rdb as redis_client
 def publish_message(id, message_data):
     publisher = pubsub_v1.PublisherClient().from_service_account_json('acc-key.json')
     topic_path = publisher.topic_path(settings.PROJECT_ID, settings.TOPIC_NAME)
@@ -19,9 +19,7 @@ subscription_path = subscriber.subscription_path(settings.PROJECT_ID, 'get-predi
 async def listen_to_pubsub():
     def callback(message):
         message_data = json.loads(message.data.decode('utf-8'))
-        redis_client.set(f'prediction:{message.attributes.id}', message.data.decode('utf-8'))
-        print(message.attributes.id)
-        print(message_data)
+        redis_client.set(f'prediction:{message.attributes["id"]}', message.data.decode('utf-8'))
         message.ack()
 
     streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)
