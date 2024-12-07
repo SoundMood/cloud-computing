@@ -18,9 +18,9 @@ class JWTBearer(HTTPBearer):
             token_data = self.decode_jwt(credentials.credentials)
             if not token_data or not token_data.get("user_id"):
                 raise HTTPException(status_code=403, detail="Invalid token data.")
-            request_body = await request.json()
-            if not self.check_id_equality(request_body, token_data["id"]):
-                raise HTTPException(status_code=403, detail="ID mismatch.")
+            # if not self.check_id_equality(request_body, token_data["id"]):
+            #     raise HTTPException(status_code=403, detail="ID mismatch.")
+            # print(credentials.credentials)
             return credentials.credentials
         else:
             raise HTTPException(status_code=403, detail="Invalid authorization code.")
@@ -33,7 +33,6 @@ class JWTBearer(HTTPBearer):
         # if REDIS_HOST:
         #     r = redis.Redis(connection_pool=pool)
         #     if r.exist(blabla): ok
-
 
         try:
             payload = jwt.decode(jwtoken, settings.JWT_SECRET, algorithms=["HS256"])
@@ -51,7 +50,5 @@ class JWTBearer(HTTPBearer):
             return {}
         except jwt.InvalidTokenError:
             return {}
-
-    def check_id_equality(self, request_body: dict, token_id: str) -> bool:
-        request_id = request_body.get("id")
-        return request_id == token_id
+        
+    

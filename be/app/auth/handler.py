@@ -8,6 +8,7 @@ import app.settings as settings
 import cryptocode
 import datetime
 import redis
+import spotipy
 
 def token_response(token: str, expire_time: float):
     return {
@@ -40,7 +41,17 @@ def sign_jwt(user: RequestUser) -> Dict[str, str]:
 
 def decode_jwt(token: str) -> dict:
     try:
-        decoded_token = jwt.decode(token, settings.JWT_SECRET, ALGORITHMs=[settings.JWT_ALGORITHM])
+        decoded_token = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+
         return decoded_token if decoded_token["expires"] >= time.time() else None
     except:
         return {}
+    
+def is_same_user(user_id: str, jwt_token: str) -> bool:
+    payload = decode_jwt(jwt_token)
+    return user_id == payload['user_id']
+
+def is_good_token(access_token: str, user_id: str):
+    sp = spotipy.Spotify(auth=access_token)
+    current_user_id = sp.current_user()['id']
+    return current_user_id == user_id

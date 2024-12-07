@@ -64,9 +64,8 @@ class User(BaseModel):
 
 class RequestUser(BaseModel):
     id: str
-    display_name: str
     access_token: str
-    refresh_token: str
+    # refresh_token: str
     # class Config:
     #     json_schema_extra = {
     #         "example": {

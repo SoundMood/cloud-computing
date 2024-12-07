@@ -2,88 +2,62 @@ from fastapi import FastAPI, Body, Depends, UploadFile, File, Request, Response,
 from typing import List, Annotated
 from pydantic import BaseModel
 
+from fastapi.security import HTTPBearer
 from app.auth.bearer import JWTBearer
-from app.auth.handler import sign_jwt
+from app.auth.handler import sign_jwt, is_same_user, decode_jwt, is_good_token
 from app.schemas import RequestUser, PlaylistCreate, User as UserSchema
 from app.models import Playlist, User
+from app.settings import JWT_SECRET, JWT_ALGORITHM
 from app.services.gcs import upload
 from app import settings
 from uuid import UUID
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from app.db import get_db
-
+import jwt
+import spotipy
+from spotipy.exceptions import SpotifyException
 
 app = FastAPI()
 
-@app.get("/", tags=["root"])
-async def read_root() -> dict:
-    return {"message": "Welcome to your blog!"}
-
-
-# @app.get("/posts", tags=["posts"])
-# async def get_posts() -> dict:
-#     return { "data": posts }
-
-
-# @app.get("/posts/{id}", tags=["posts"])
-# async def get_single_post(id: int) -> dict:
-#     if id > len(posts):
-#         return {
-#             "error": "No such post with the supplied ID."
-#         }
-
-#     for post in posts:
-#         if post["id"] == id:
-#             return {
-#                 "data": post
-#             }
-
-
-# @app.post("/posts", dependencies=[Depends(JWTBearer())], tags=["posts"])
-# async def add_post(post: PostSchema) -> dict:
-#     post.id = len(posts) + 1
-#     posts.append(post.dict())
-#     return {
-#         "data": "post added."
-#     }
+async def get_current_display_name(access_token: str):
+    sp = spotipy.Spotify(auth=access_token)
+    display_name = sp.current_user()['display_name']
+    return display_name
 
 # TODO: Complete the documentation (Response, dll)
 @app.post("/auth/token", tags=["Authorization"])
 async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depends(get_db)):
-    # TODO: Add real Spotify check to prevent fake id or tokens
-
-    db_user = db.query(User).filter(User.id == user.id).first()
-    signObject = sign_jwt(user)
-
-    if db_user is None:
-        db_user = User(id=user.id, display_name=user.display_name)
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-        signObject["is_registered"] = False
-
-    else: 
-        signObject["is_registered"] = True
+    try:
+        if not is_good_token(user.access_token, user.id):
+            raise HTTPException(status_code=401, detail="Token is not belong to requested user_id")
         
-    return signObject
+        db_user = db.query(User).filter(User.id == user.id).first()
+        signObject = sign_jwt(user)
+
+        if db_user is None:
+            db_user = User(id=user.id, display_name=get_current_display_name(user.access_token))
+            db.add(db_user)
+            db.commit()
+            db.refresh(db_user)
+            signObject["is_registered"] = False
+
+        return signObject
+
+    except SpotifyException as e:
+        raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
 
-# @app.post("/auth/login", tags=["Authorization"])
-# async def user_login(user: UserLoginSchema = Body(...)):
-#     if check_user(user):
-#         return sign_jwt(user)
-#     return {
-#         "error": "Wrong login details!"
-#     }
-
-@app.post("/user/{user_id}/playlists", dependencies=[Depends(JWTBearer())], tags=["Playlist"])
+@app.post("/user/{user_id}/playlists", tags=["Playlist"])
 async def create_playlist(
+    token: Annotated[str, Depends(JWTBearer())],
     r: Response,
     user_id: str,
     playlist: Annotated[PlaylistCreate, Form()],
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
 ):
+    if not is_same_user(user_id, token):
+        raise HTTPException(status_code=403, detail="Token User ID mismatch")
     
     file_content = await playlist.image.read()
     
@@ -103,15 +77,20 @@ async def create_playlist(
     return db_playlist
 
 @app.get("/user/{user_id}/playlists", tags=["Playlist"])
-def read_playlists_by_user(user_id: str, db: Session = Depends(get_db)):
-    # TODO: Add middleware to check if the user is the same as the user_id
+async def read_playlists_by_user(token: Annotated[str, Depends(JWTBearer())], user_id: str, db: Session = Depends(get_db)):
+    if not is_same_user(user_id, token):
+        raise HTTPException(status_code=403, detail="Token User ID mismatch")
+    
     playlists = db.query(Playlist).filter(Playlist.user_id == user_id).order_by(desc(Playlist.created_at)).all()
     if not playlists:
         raise HTTPException(status_code=404, detail="No playlists found")
     return playlists
 
 @app.put("/user/{user_id}/playlists/{playlist_id}", tags=["Playlist"])
-def update_playlist_name(r: Request, user_id: str, playlist_id: UUID, playlist_name: str, db: Session = Depends(get_db)):
+async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], r: Request, user_id: str, playlist_id: UUID, playlist_name: str, db: Session = Depends(get_db)):
+    if not is_same_user(user_id, token):
+        raise HTTPException(status_code=403, detail="Token User ID mismatch")
+    
     db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
     if db_playlist is None:
         raise HTTPException(status_code=404, detail="Playlist not found")
@@ -121,9 +100,13 @@ def update_playlist_name(r: Request, user_id: str, playlist_id: UUID, playlist_n
     db.refresh(db_playlist)
     return db_playlist
 
-@app.get("/users/{user_id}", tags=["User"])
-async def get_user_info(r: Request, user_id: str, db: Session = Depends(get_db)):
-    print(await r.json())
+oauth2_scheme = HTTPBearer()
+
+@app.get("/users/{user_id}",  tags=["User"])
+async def get_user_info(token: Annotated[str, Depends(JWTBearer())], user_id: str, db: Session = Depends(get_db)):
+    if not is_same_user(user_id, token):
+        raise HTTPException(status_code=403, detail="Token User ID mismatch")
+    
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
