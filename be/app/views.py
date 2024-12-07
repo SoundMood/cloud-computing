@@ -88,18 +88,20 @@ async def predict_mood_and_generate_playlist(
     key = f'prediction:{str(id)}'
 
     db_playlist = None
-    if redis_client.exists(key):
-        
-        cached_message = redis_client.get(key)
-        json_object = json.loads(cached_message)
-        playlist = PlaylistCreate(
-            id=id,
-            mood=json_object['mood'],
-            song_ids=json_object['song_ids'],
-            user_id=user_id
-        )
-        db_playlist = await create_playlist(playlist)
-           
+
+    while True:
+        if redis_client.exists(key):
+            
+            cached_message = redis_client.get(key)
+            json_object = json.loads(cached_message)
+            playlist = PlaylistCreate(
+                id=id,
+                mood=json_object['mood'],
+                song_ids=json_object['song_ids'],
+                user_id=user_id
+            )
+            db_playlist = await create_playlist(playlist)
+            break
     r.status_code = status.HTTP_201_CREATED
     return db_playlist
 
