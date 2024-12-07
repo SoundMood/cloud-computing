@@ -27,7 +27,7 @@ def get_current_display_name(access_token: str):
 
 # TODO: Complete the documentation (Response, dll)
 @app.post("/auth/token", tags=["Authorization"])
-async def create_token(user: Annotated[RequestUser, Form()], db = get_db):
+async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depends(get_db)):
     try:
         if not is_good_token(user.access_token, user.id):
             raise HTTPException(status_code=401, detail="Token is not belong to requested user_id")
@@ -50,7 +50,7 @@ async def create_token(user: Annotated[RequestUser, Form()], db = get_db):
 # TODO: Remove from views, become a part of /predict itself
 async def create_playlist(
     playlist: PlaylistCreate,
-    db: Session = Depends(get_db)
+    db = next(get_db())
 ):
 
     db_playlist = Playlist(
