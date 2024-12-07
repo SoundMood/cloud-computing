@@ -85,12 +85,11 @@ async def predict_mood_and_generate_playlist(
 
     publish_message(id, message_data)
 
-    key = f'prediction:{id}'
+    key = f'prediction:{str(id)}'
 
     db_playlist = None
-    
     if redis_client.exists(key):
-        print("Cache hit")
+        
         cached_message = redis_client.get(key)
         json_object = json.loads(cached_message)
         playlist = PlaylistCreate(
