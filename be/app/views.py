@@ -47,7 +47,6 @@ async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depen
     except SpotifyException as e:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
-# TODO: Remove from views, become a part of /predict itself
 async def create_playlist(
     playlist: PlaylistCreate,
     db = next(get_db())
@@ -67,23 +66,22 @@ async def create_playlist(
 
 @app.post("/user/{user_id}/predict", tags=["Prediction"])
 async def predict_mood_and_generate_playlist(
-    # token: Annotated[str, Depends(JWTBearer())],
+    token: Annotated[str, Depends(JWTBearer())],
     r: Response,
     user_id: str,
     image: Annotated[UploadFile, File()]
 ):
-    # if not is_same_user(user_id, token):
-    #     raise HTTPException(status_code=403, detail="Token User ID mismatch")
+    if not is_same_user(user_id, token):
+        raise HTTPException(status_code=403, detail="Token User ID mismatch")
     
     file_content = await image.read()    
     id = uuid.uuid4()
     gcs_name = upload(file_content, id)
 
+    # TODO: Imple ML dan Remove photo_url column
     message_data = {
         "user_id": user_id,
-        "image_name": gcs_name,
-        "mood": "sedih",
-        "song_ids": ["1", "2", "3"]
+        "image_name": gcs_name
     }
 
     publish_message(id, message_data)
