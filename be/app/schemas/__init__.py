@@ -33,10 +33,11 @@ class PostSchema(BaseModel):
 #         }
 
 class PlaylistCreate(BaseModel):
+    id: UUID
     mood: str
     song_ids: List[str]
-    image: Annotated[UploadFile, File()]
-
+    user_id: str
+    
     # class Config:
     #     json_schema_extra = {
     #         "example": {
@@ -71,6 +72,8 @@ class RequestUser(BaseModel):
     #         "example": {
     #             "id": "greatuser123",
     #             "access_token": "Zy7yEZfAMzf0hVT4",
-    #             "refresh_token": "3cOFKJGq4cKvdMCz"
     #         }
     #     }
+
+class PredictCreate(BaseModel):
+    image: Annotated[UploadFile, File()]

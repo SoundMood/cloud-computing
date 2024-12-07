@@ -10,3 +10,4 @@ def create_redis():
   )
 
 pool = create_redis()
+client = redis.Redis(connection_pool=pool)

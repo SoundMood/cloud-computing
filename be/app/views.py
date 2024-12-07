@@ -1,26 +1,25 @@
-from fastapi import FastAPI, Body, Depends, UploadFile, File, Request, Response, status, HTTPException, Form
-from typing import List, Annotated
-from pydantic import BaseModel
-
-from fastapi.security import HTTPBearer
+from fastapi import FastAPI, Depends, Request, Response, status, HTTPException, Form, UploadFile, File
+from typing import Annotated
 from app.auth.bearer import JWTBearer
-from app.auth.handler import sign_jwt, is_same_user, decode_jwt, is_good_token
-from app.schemas import RequestUser, PlaylistCreate, User as UserSchema
+from app.db.redis import client as redis_client
+from app.auth.handler import sign_jwt, is_same_user, is_good_token
+from app.controller import publish_message
+from app.schemas import RequestUser, PlaylistCreate, PredictCreate
 from app.models import Playlist, User
-from app.settings import JWT_SECRET, JWT_ALGORITHM
 from app.services.gcs import upload
-from app import settings
+import json
 from uuid import UUID
+import uuid
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 from app.db import get_db
-import jwt
 import spotipy
 from spotipy.exceptions import SpotifyException
+import time
 
 app = FastAPI()
 
-async def get_current_display_name(access_token: str):
+def get_current_display_name(access_token: str):
     sp = spotipy.Spotify(auth=access_token)
     display_name = sp.current_user()['display_name']
     return display_name
@@ -47,32 +46,62 @@ async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depen
     except SpotifyException as e:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
-
-@app.post("/user/{user_id}/playlists", tags=["Playlist"])
+# TODO: Remove from views, become a part of /predict itself
 async def create_playlist(
-    token: Annotated[str, Depends(JWTBearer())],
-    r: Response,
-    user_id: str,
-    playlist: Annotated[PlaylistCreate, Form()],
+    playlist: PlaylistCreate,
     db: Session = Depends(get_db)
 ):
-    if not is_same_user(user_id, token):
-        raise HTTPException(status_code=403, detail="Token User ID mismatch")
-    
-    file_content = await playlist.image.read()
-    
-    gcs_url = upload(file_content)
 
     db_playlist = Playlist(
-        user_id=user_id,
+        id=playlist.id,
+        user_id=playlist.user_id,
         mood=playlist.mood,
         song_ids=playlist.song_ids,
-        photo_url=gcs_url
     )
 
     db.add(db_playlist)
     db.commit()
     db.refresh(db_playlist)
+    return db_playlist
+
+@app.post("/user/{user_id}/predict", tags=["Prediction"])
+async def predict_mood_and_generate_playlist(
+    # token: Annotated[str, Depends(JWTBearer())],
+    r: Response,
+    user_id: str,
+    image: Annotated[UploadFile, File()]
+):
+    # if not is_same_user(user_id, token):
+    #     raise HTTPException(status_code=403, detail="Token User ID mismatch")
+    
+    file_content = await image.read()    
+    id = uuid.uuid4()
+    gcs_name = upload(file_content, id)
+
+    message_data = {
+        "user_id": user_id,
+        "image_name": gcs_name
+    }
+
+    publish_message(id, message_data)
+
+    key = f'prediction:{id}'
+
+    db_playlist = None
+    while True:
+        if redis_client.exists(key):
+            cached_message = redis_client.get(key)
+            json_object = json.loads(cached_message)
+            playlist = PlaylistCreate(
+                id=id,
+                mood=json_object['mood'],
+                song_ids=json_object['song_ids'],
+                user_id=user_id
+            )
+            db_playlist = create_playlist(playlist)
+            break
+        time.sleep(0.5)
+        
     r.status_code = status.HTTP_201_CREATED
     return db_playlist
 
@@ -99,8 +128,6 @@ async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], r: R
     db.commit()
     db.refresh(db_playlist)
     return db_playlist
-
-oauth2_scheme = HTTPBearer()
 
 @app.get("/users/{user_id}",  tags=["User"])
 async def get_user_info(token: Annotated[str, Depends(JWTBearer())], user_id: str, db: Session = Depends(get_db)):
