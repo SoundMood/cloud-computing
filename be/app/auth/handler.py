@@ -3,7 +3,7 @@ from typing import Dict
 
 import jwt
 from app.schemas import RequestUser
-from app.db.redis import pool
+from app.db.redis import rdb as r
 import app.settings as settings
 import cryptocode
 import datetime
@@ -30,7 +30,6 @@ def sign_jwt(user: RequestUser) -> Dict[str, str]:
 
     # See you soon Redis
     if settings.REDIS_HOST:
-        r = redis.Redis(connection_pool=pool)
         r.set(token, payload, ex=86400)
     else:
         # TODO: Add to logging
