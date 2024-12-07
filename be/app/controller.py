@@ -20,6 +20,7 @@ async def listen_to_pubsub():
     def callback(message):
         message_data = json.loads(message.data.decode('utf-8'))
         redis_client.set(f'prediction:{message.attributes["id"]}', message.data.decode('utf-8'))
+        redis_client.expire(f'prediction:{message.attributes["id"]}', 300)
         print(f'prediction:{message.attributes["id"]}')
         message.ack()
 

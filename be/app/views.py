@@ -7,6 +7,7 @@ from app.controller import publish_message
 from app.schemas import RequestUser, PlaylistCreate, PredictCreate
 from app.models import Playlist, User
 from app.services.gcs import upload
+import asyncio
 import json
 from uuid import UUID
 import uuid
@@ -80,7 +81,9 @@ async def predict_mood_and_generate_playlist(
 
     message_data = {
         "user_id": user_id,
-        "image_name": gcs_name
+        "image_name": gcs_name,
+        "mood": "sedih",
+        "song_ids": ["1", "2", "3"]
     }
 
     publish_message(id, message_data)
@@ -91,7 +94,6 @@ async def predict_mood_and_generate_playlist(
 
     while True:
         if redis_client.exists(key):
-            
             cached_message = redis_client.get(key)
             json_object = json.loads(cached_message)
             playlist = PlaylistCreate(
@@ -102,6 +104,7 @@ async def predict_mood_and_generate_playlist(
             )
             db_playlist = await create_playlist(playlist)
             break
+        await asyncio.sleep(1)
     r.status_code = status.HTTP_201_CREATED
     return db_playlist
 
