@@ -47,7 +47,7 @@ PyJWT==2.8.0
 pyproject_hooks==1.2.0
 python-decouple==3.8
 python-dotenv==1.0.1
-python-multipart==0.0.17
+python-multipart>=0.0.18
 PyYAML==6.0.2
 redis==5.2.0
 requests==2.32.3
