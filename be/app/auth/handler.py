@@ -21,10 +21,7 @@ def token_response(token: str, expire_time: float):
 def sign_jwt(user: RequestUser) -> Dict[str, str]:
     payload = {
         "user_id": user.id,
-        "expires": time.time() + 86400,
-        # TODO: Remove access token?
-        "access_token_sha": cryptocode.encrypt(user.access_token, settings.SHA_SECRET),
-        "refresh_token_sha": cryptocode.encrypt(user.refresh_token, settings.SHA_SECRET)
+        "expires": time.time() + 86400
     }
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
