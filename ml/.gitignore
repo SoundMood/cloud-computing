@@ -1,0 +1,9 @@
+.idea
+venv/
+env/
+.venv/
+.env
+**/__pycache__
+.vscode
+Pipfile*
+acc-key.json

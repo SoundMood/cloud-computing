@@ -71,40 +71,50 @@ async def predict_mood_and_generate_playlist(
     user_id: str,
     image: Annotated[UploadFile, File()]
 ):
-    if not is_same_user(user_id, token):
-        raise HTTPException(status_code=403, detail="Token User ID mismatch")
+    try:
+        if not is_same_user(user_id, token):
+            raise HTTPException(status_code=403, detail="Token User ID mismatch")
+        
+        file_content = await image.read()    
+        id = uuid.uuid4()
+        gcs_name = upload(file_content, id)
+
+        # TODO: Imple ML dan Remove photo_url column
+        message_data = {
+            "image_name": gcs_name
+        }
+
+        publish_message(id, message_data)
+
+        key = f'prediction:{str(id)}'
+
+        db_playlist = None
+
+        # Optional TODO: add 202 Accepted for non-blocking response
+        while True:
+            if redis_client.exists(key):
+                cached_message = redis_client.get(key)
+                json_object = json.loads(cached_message)
+
+                if 'error' in json_object:
+                    raise HTTPException(status_code=500, detail={"error": e})
+                
+                playlist = PlaylistCreate(
+                    id=id,
+                    mood=json_object['mood'],
+                    song_ids=json_object['song_ids'],
+                    user_id=user_id
+                )
+                db_playlist = await create_playlist(playlist)
+                break
+            await asyncio.sleep(1)
+        r.status_code = status.HTTP_201_CREATED
+        return db_playlist
     
-    file_content = await image.read()    
-    id = uuid.uuid4()
-    gcs_name = upload(file_content, id)
-
-    # TODO: Imple ML dan Remove photo_url column
-    message_data = {
-        "user_id": user_id,
-        "image_name": gcs_name
-    }
-
-    publish_message(id, message_data)
-
-    key = f'prediction:{str(id)}'
-
-    db_playlist = None
-
-    while True:
-        if redis_client.exists(key):
-            cached_message = redis_client.get(key)
-            json_object = json.loads(cached_message)
-            playlist = PlaylistCreate(
-                id=id,
-                mood=json_object['mood'],
-                song_ids=json_object['song_ids'],
-                user_id=user_id
-            )
-            db_playlist = await create_playlist(playlist)
-            break
-        await asyncio.sleep(1)
-    r.status_code = status.HTTP_201_CREATED
-    return db_playlist
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"message": f"Internal server error: {e}"})
 
 @app.get("/user/{user_id}/playlists", tags=["Playlist"])
 async def read_playlists_by_user(token: Annotated[str, Depends(JWTBearer())], user_id: str, db: Session = Depends(get_db)):
@@ -129,6 +139,7 @@ async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], r: R
     db.commit()
     db.refresh(db_playlist)
     return db_playlist
+    
 
 @app.get("/users/{user_id}",  tags=["User"])
 async def get_user_info(token: Annotated[str, Depends(JWTBearer())], user_id: str, db: Session = Depends(get_db)):
