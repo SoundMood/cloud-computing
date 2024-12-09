@@ -25,12 +25,12 @@ def sign_jwt(user: RequestUser) -> Dict[str, str]:
     }
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-    # See you soon Redis
-    if settings.REDIS_HOST:
-        r.set(token, payload, ex=86400)
-    else:
-        # TODO: Add to logging
-        print("REDIS_HOST IS EMPTY!!") 
+    # if settings.REDIS_HOST:
+    #     TODO: Make payload into string instead
+    #     r.set(token, payload, ex=86400)
+    # else:
+    #     # TODO: Add to logging
+    #     print("REDIS_HOST IS EMPTY!!") 
 
     return token_response(token, payload["expires"])
 
