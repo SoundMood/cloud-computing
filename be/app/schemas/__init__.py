@@ -38,7 +38,7 @@ class Playlist(PlaylistCreate):
     mood: Optional[str] = Field(default="")
     song_ids: Optional[List[str]] = Field(default_factory=list)
     photo_url: Optional[str] = None
-    created_at: datetime
+    created_at: datetime.datetime
     name: str
     # TODO: Add song metadata like album url, title, artist in Response
 
