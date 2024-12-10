@@ -4,7 +4,7 @@ import app.settings as settings
 from app.db.redis import rdb as redis_client
 from app.db import get_db
 from app.models import Playlist
-
+from app.schemas import Playlist as PlaylistSchema
 subscriber = pubsub_v1.SubscriberClient().from_service_account_json('acc-key.json')
 subscription_path = subscriber.subscription_path(settings.PROJECT_ID, 'plz-predict')
 
@@ -36,7 +36,18 @@ async def listen_to_pubsub():
         db_playlist.is_completed = True
         db.commit()
         db.refresh(db_playlist)
-        json_string = json.dumps(db_playlist)
+
+        playlist = PlaylistSchema(
+            id=db_playlist.id,
+            created_at=db_playlist.created_at,
+            user_id=db_playlist.user_id,
+            name=db_playlist.name,
+            mood=db_playlist.mood,
+            song_ids=db_playlist.song_ids,
+            is_completed=db_playlist.is_completed
+        )
+        
+        json_string = playlist.model_dump_json()
 
         if 'error' in json_object:
             redis_client.set(f'playlist:{playlist_id}', "face not detected")
