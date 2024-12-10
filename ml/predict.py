@@ -25,7 +25,7 @@ def detect_and_crop_face(image):
         cropped_face = image[y:y+h, x:x+w]  # Crop wajah dari gambar
         return cropped_face
     else:
-        print("No face detected!")
+        # print("No face detected!")
         return None
 
 # NEXT: Imple ML part and done

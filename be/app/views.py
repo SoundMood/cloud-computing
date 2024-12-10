@@ -30,7 +30,6 @@ def get_current_user(access_token: str):
 async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depends(get_db)):
     try:
         current_user = get_current_user(user.access_token)
-        print(current_user)
         db_user = db.query(User).filter(User.id == current_user['id']).first()
         signObject = sign_jwt(user, current_user['id'])
 
@@ -47,16 +46,18 @@ async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depen
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
 async def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
+    try:
+        db_playlist = Playlist(
+            id=playlist.id,
+            user_id=playlist.user_id
+        )
 
-    db_playlist = Playlist(
-        id=playlist.id,
-        user_id=playlist.user_id
-    )
-
-    db.add(db_playlist)
-    db.commit()
-    db.refresh(db_playlist)
-    return db_playlist
+        db.add(db_playlist)
+        db.commit()
+        db.refresh(db_playlist)
+        return db_playlist
+    except Exception as e:
+        raise e
 
 @app.post("/me/predict", tags=["Prediction"])
 async def predict_mood_and_generate_playlist(
