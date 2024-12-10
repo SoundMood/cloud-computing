@@ -62,3 +62,4 @@ class RequestUser(BaseModel):
 
 class PredictCreate(BaseModel):
     image: Annotated[UploadFile, File()]
+    access_token: str
