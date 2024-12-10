@@ -126,6 +126,17 @@ async def read_playlists_by_user(token: Annotated[str, Depends(JWTBearer())], us
         raise HTTPException(status_code=404, detail="No playlists found")
     return playlists
 
+@app.get("/user/{user_id}/playlists/{playlist_id}", tags=["Playlist"])
+async def get_playlist_by_id(token: Annotated[str, Depends(JWTBearer())], r: Request, user_id: str, playlist_id: UUID, db: Session = Depends(get_db)):
+    if not is_same_user(user_id, token):
+        raise HTTPException(status_code=403, detail="Token User ID mismatch")
+    
+    db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
+    if db_playlist is None:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+
+    return db_playlist
+
 @app.put("/user/{user_id}/playlists/{playlist_id}", tags=["Playlist"])
 async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], r: Request, user_id: str, playlist_id: UUID, playlist_name: str, db: Session = Depends(get_db)):
     if not is_same_user(user_id, token):
