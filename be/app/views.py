@@ -45,7 +45,7 @@ async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depen
     except SpotifyException as e:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
-async def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
+def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
     try:
         db_playlist = Playlist(
             id=playlist.id,
@@ -54,10 +54,9 @@ async def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
 
         db.add(db_playlist)
         db.commit()
-        db.refresh(db_playlist)
-        return db_playlist
     except Exception as e:
         raise e
+
 
 @app.post("/me/predict", tags=["Prediction"])
 async def predict_mood_and_generate_playlist(
@@ -83,10 +82,10 @@ async def predict_mood_and_generate_playlist(
             user_id=user_id
         )
 
-        db_playlist = await create_playlist(playlist)
+        create_playlist(playlist)
 
-        redis_client.set(f'playlist:{id}', "in progress")
-        redis_client.expire(f'playlist:{id}', 3600)
+        # redis_client.set(f'playlist:{id}', "in progress")
+        # redis_client.expire(f'playlist:{id}', 3600)
 
         r.status_code = status.HTTP_202_ACCEPTED
         return {
