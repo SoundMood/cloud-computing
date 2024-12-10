@@ -62,6 +62,7 @@ def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
 async def predict_mood_and_generate_playlist(
     token: Annotated[str, Depends(JWTBearer())],
     r: Response,
+    access_token: str,
     image: Annotated[UploadFile, File()]
 ):
     try:
