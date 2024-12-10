@@ -19,8 +19,6 @@ import datetime
 
 class PlaylistCreate(BaseModel):
     id: UUID
-    mood: str
-    song_ids: List[str]
     user_id: str
     
     # class Config:
