@@ -12,8 +12,8 @@ class Playlist(Base):
     created_at = Column(TIMESTAMP, nullable=False, default=func.current_timestamp())
     user_id = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False, default="untitled playlist")
-    mood = Column(String(255))
-    song_ids = Column(ARRAY(String(255)))
+    mood = Column(String(255), nullable=True, default="")
+    song_ids = Column(ARRAY(String(255)), nullable=True, default=[])
     is_completed = Column(Boolean, nullable=True, default=False)
 
     def __repr__(self):
