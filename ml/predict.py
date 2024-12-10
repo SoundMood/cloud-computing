@@ -33,7 +33,7 @@ def detect_and_crop_face(image):
 storage_client = storage.Client.from_service_account_json('acc-key.json')
 
 
-async def predict(image_name: str):
+def predict(image_name: str):
     try:
         # Access Google Cloud Storage to read image
         bucket = storage_client.bucket(BUCKET_NAME)

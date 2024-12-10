@@ -13,7 +13,6 @@ class Playlist(Base):
     user_id = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False, default="untitled playlist")
     mood = Column(String(255))
-    photo_url = Column(Text)
     song_ids = Column(ARRAY(String(255)))
 
     def __repr__(self):
