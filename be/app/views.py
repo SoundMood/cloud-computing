@@ -62,11 +62,11 @@ def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
 async def predict_mood_and_generate_playlist(
     token: Annotated[str, Depends(JWTBearer())],
     r: Response,
-    pr: Annotated[PredictCreate, File()]):
+    pr: Annotated[PredictCreate, Form()]):
     try:
         image = pr.image
         access_token = pr.access_token
-        
+
         user_id = decode_jwt(token)['user_id']
         file_content = await image.read()    
         id = uuid.uuid4()
