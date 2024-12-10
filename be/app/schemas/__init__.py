@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field
 from uuid import UUID
-from typing import List, Annotated
+from typing import List, Annotated, Optional
 from fastapi import Form, UploadFile, File
 import inspect
-
+import datetime
 
 # class UserLoginSchema(BaseModel):
 #     email: EmailStr = Field(...)
@@ -33,9 +33,12 @@ class PlaylistCreate(BaseModel):
     #     }
 
 class Playlist(PlaylistCreate):
-    photo_url: str
-    created_at: str
     id: UUID
+    user_id: str
+    mood: Optional[str] = Field(default="")
+    song_ids: Optional[List[str]] = Field(default_factory=list)
+    photo_url: Optional[str] = None
+    created_at: datetime
     name: str
     # TODO: Add song metadata like album url, title, artist in Response
 
