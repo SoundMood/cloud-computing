@@ -2,6 +2,8 @@ from google.cloud import pubsub_v1
 import json
 import app.settings as settings
 from app.db.redis import rdb as redis_client
+from app.db import get_db
+from app.models import Playlist
 
 subscriber = pubsub_v1.SubscriberClient().from_service_account_json('acc-key.json')
 subscription_path = subscriber.subscription_path(settings.PROJECT_ID, 'plz-predict')
@@ -20,8 +22,28 @@ def publish_message(id, message_data):
 async def listen_to_pubsub():
     def callback(message):
         # message_data = json.loads(message.data.decode('utf-8'))
-        redis_client.set(f'prediction:{message.attributes["id"]}', message.data.decode('utf-8'))
-        redis_client.expire(f'prediction:{message.attributes["id"]}', 300)
+        playlist_id = message.attributes["id"]
+        cached_message = message.data.decode('utf-8')
+        json_object = json.loads(cached_message)
+
+        db = next(get_db())
+        db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
+
+        if 'error' not in json_object:
+            db_playlist.mood = json_object['mood']
+            db_playlist.song_ids = json_object['song_ids']
+        
+        db_playlist.is_completed = True
+        db.commit()
+        db.refresh(db_playlist)
+        json_string = json.dumps(db_playlist)
+
+        if 'error' in json_object:
+            redis_client.set(f'playlist:{playlist_id}', "face not detected")
+        else:
+            redis_client.set(f'playlist:{playlist_id}', json_string)
+        
+        redis_client.expire(f'playlist:{playlist_id}', 3600)
         message.ack()
 
     streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)

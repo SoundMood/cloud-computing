@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ARRAY, func
+from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ARRAY, func, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -14,6 +14,7 @@ class Playlist(Base):
     name = Column(String(255), nullable=False, default="untitled playlist")
     mood = Column(String(255))
     song_ids = Column(ARRAY(String(255)))
+    is_completed = Column(Boolean, nullable=True, default=False)
 
     def __repr__(self):
         return f"<Playlist(playlist_id={self.id}, created_at={self.created_at}, user_id={self.user_id}, mood={self.mood}, photo_url={self.photo_url}, song_id_list={self.song_ids})>"

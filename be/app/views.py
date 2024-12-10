@@ -50,9 +50,7 @@ async def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
 
     db_playlist = Playlist(
         id=playlist.id,
-        user_id=playlist.user_id,
-        mood=playlist.mood,
-        song_ids=playlist.song_ids,
+        user_id=playlist.user_id
     )
 
     db.add(db_playlist)
@@ -79,30 +77,21 @@ async def predict_mood_and_generate_playlist(
 
         publish_message(id, message_data)
 
-        key = f'prediction:{str(id)}'
+        playlist = PlaylistCreate(
+            id=id,
+            user_id=user_id
+        )
 
-        db_playlist = None
+        db_playlist = await create_playlist(playlist)
 
-        # Optional TODO: add 202 Accepted for non-blocking response
-        while True:
-            if redis_client.exists(key):
-                cached_message = redis_client.get(key)
-                json_object = json.loads(cached_message)
+        redis_client.set(f'playlist:{id}', "in progress")
+        redis_client.expire(f'playlist:{id}', 3600)
 
-                if 'error' in json_object:
-                    raise HTTPException(status_code=500, detail={"error": e})
-                
-                playlist = PlaylistCreate(
-                    id=id,
-                    mood=json_object['mood'],
-                    song_ids=json_object['song_ids'],
-                    user_id=user_id
-                )
-                db_playlist = await create_playlist(playlist)
-                break
-            await asyncio.sleep(1)
-        r.status_code = status.HTTP_201_CREATED
-        return db_playlist
+        r.status_code = status.HTTP_202_ACCEPTED
+        return {
+            "playlist_id": id,
+            "message": "In progress"
+        }
     
     except HTTPException as e:
         raise e
@@ -112,6 +101,7 @@ async def predict_mood_and_generate_playlist(
 @app.get("/me/playlists", tags=["Playlist"])
 async def read_playlists_by_user(token: Annotated[str, Depends(JWTBearer())], db: Session = Depends(get_db)):
     user_id = decode_jwt(token)['user_id']
+
     playlists = db.query(Playlist).filter(Playlist.user_id == user_id).order_by(desc(Playlist.created_at)).all()
     if not playlists:
         raise HTTPException(status_code=404, detail="No playlists found")
@@ -119,11 +109,30 @@ async def read_playlists_by_user(token: Annotated[str, Depends(JWTBearer())], db
 
 @app.get("/me/playlists/{playlist_id}", tags=["Playlist"])
 async def get_playlist_by_id(token: Annotated[str, Depends(JWTBearer())], playlist_id: UUID, db: Session = Depends(get_db)):
+    # TODO: Check if data still processed
+
+    if redis_client.exists(f'playlist:{playlist_id}'):
+        if redis_client.get(f'playlist:{playlist_id}') == "in progress":
+            raise HTTPException(status_code=202, detail="Playlist is still being processed")
+        
+        elif redis_client.get(f'playlist:{playlist_id}') == "face not detected":
+            raise HTTPException(status_code=500, detail="Face not detected. Please try again")
+        
+        cached_message = redis_client.get(f'playlist:{playlist_id}')
+        json_object = json.loads(cached_message)
+        return json_object
+    
     user_id = decode_jwt(token)['user_id']
     db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id and User.id == user_id).first()
     if db_playlist is None:
         raise HTTPException(status_code=404, detail="Playlist not found")
-
+    
+    if db_playlist.is_completed == False:
+        raise HTTPException(status_code=202, detail="Playlist is still being processed")
+    
+    if db_playlist.is_completed == True and db_playlist.mood is None:
+        raise HTTPException(status_code=500, detail="Face not detected. Please try again")
+    
     return db_playlist
 
 @app.put("/me/playlists/{playlist_id}", tags=["Playlist"])
@@ -132,6 +141,13 @@ async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], play
     db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id and User.id == user_id).first()
     if db_playlist is None:
         raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    if db_playlist.is_completed == False:
+        raise HTTPException(status_code=202, detail="Playlist is still being processed")
+    
+    if db_playlist.is_completed == True and db_playlist.mood is None:
+        raise HTTPException(status_code=500, detail="Face not detected. Please try again")
+    
     db_playlist.name = playlist_name
 
     db.commit()
