@@ -14,7 +14,7 @@ def publish_message(id, message_data):
     message_bytes = message_json.encode('utf-8')
 
     
-    future = publisher.publish(topic_path, message_bytes, id=str(id), type='return-predict')
+    future = publisher.publish(topic_path, message_bytes, id=str(id), type='plz-predict')
 
 
 async def listen_to_pubsub():
