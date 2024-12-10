@@ -1,8 +1,8 @@
-from fastapi import FastAPI, Depends, Request, Response, status, HTTPException, Form, UploadFile, File
+from fastapi import FastAPI, Depends, Response, status, HTTPException, Form, UploadFile, File
 from typing import Annotated
 from app.auth.bearer import JWTBearer
 from app.db.redis import rdb as redis_client
-from app.auth.handler import sign_jwt, is_same_user, is_good_token
+from app.auth.handler import sign_jwt, decode_jwt
 from app.controller import publish_message
 from app.schemas import RequestUser, PlaylistCreate, PredictCreate
 from app.models import Playlist, User
@@ -20,23 +20,22 @@ import time
 
 app = FastAPI()
 
-def get_current_display_name(access_token: str):
+def get_current_user(access_token: str):
     sp = spotipy.Spotify(auth=access_token)
-    display_name = sp.current_user()['display_name']
-    return display_name
+    current_user = sp.current_user()
+    return current_user
 
 # TODO: Complete the documentation (Response, dll)
 @app.post("/auth/token", tags=["Authorization"])
 async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depends(get_db)):
     try:
-        if not is_good_token(user.access_token, user.id):
-            raise HTTPException(status_code=401, detail="Token is not belong to requested user_id")
-        
-        db_user = db.query(User).filter(User.id == user.id).first()
-        signObject = sign_jwt(user)
+        current_user = get_current_user(user.access_token)
+        print(current_user)
+        db_user = db.query(User).filter(User.id == current_user['id']).first()
+        signObject = sign_jwt(user, current_user['id'])
 
         if db_user is None:
-            db_user = User(id=user.id, display_name=get_current_display_name(user.access_token))
+            db_user = User(id=current_user['id'], display_name=current_user['display_name'])
             db.add(db_user)
             db.commit()
             db.refresh(db_user)
@@ -47,10 +46,7 @@ async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depen
     except SpotifyException as e:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
-async def create_playlist(
-    playlist: PlaylistCreate,
-    db = next(get_db())
-):
+async def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
 
     db_playlist = Playlist(
         id=playlist.id,
@@ -64,17 +60,14 @@ async def create_playlist(
     db.refresh(db_playlist)
     return db_playlist
 
-@app.post("/user/{user_id}/predict", tags=["Prediction"])
+@app.post("/me/predict", tags=["Prediction"])
 async def predict_mood_and_generate_playlist(
     token: Annotated[str, Depends(JWTBearer())],
     r: Response,
-    user_id: str,
     image: Annotated[UploadFile, File()]
 ):
     try:
-        if not is_same_user(user_id, token):
-            raise HTTPException(status_code=403, detail="Token User ID mismatch")
-        
+        user_id = decode_jwt(token)['user_id']
         file_content = await image.read()    
         id = uuid.uuid4()
         gcs_name = upload(file_content, id)
@@ -116,33 +109,27 @@ async def predict_mood_and_generate_playlist(
     except Exception as e:
         raise HTTPException(status_code=500, detail={"message": f"Internal server error: {e}"})
 
-@app.get("/user/{user_id}/playlists", tags=["Playlist"])
-async def read_playlists_by_user(token: Annotated[str, Depends(JWTBearer())], user_id: str, db: Session = Depends(get_db)):
-    if not is_same_user(user_id, token):
-        raise HTTPException(status_code=403, detail="Token User ID mismatch")
-    
+@app.get("/me/playlists", tags=["Playlist"])
+async def read_playlists_by_user(token: Annotated[str, Depends(JWTBearer())], db: Session = Depends(get_db)):
+    user_id = decode_jwt(token)['user_id']
     playlists = db.query(Playlist).filter(Playlist.user_id == user_id).order_by(desc(Playlist.created_at)).all()
     if not playlists:
         raise HTTPException(status_code=404, detail="No playlists found")
     return playlists
 
-@app.get("/user/{user_id}/playlists/{playlist_id}", tags=["Playlist"])
-async def get_playlist_by_id(token: Annotated[str, Depends(JWTBearer())], r: Request, user_id: str, playlist_id: UUID, db: Session = Depends(get_db)):
-    if not is_same_user(user_id, token):
-        raise HTTPException(status_code=403, detail="Token User ID mismatch")
-    
-    db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
+@app.get("/me/playlists/{playlist_id}", tags=["Playlist"])
+async def get_playlist_by_id(token: Annotated[str, Depends(JWTBearer())], playlist_id: UUID, db: Session = Depends(get_db)):
+    user_id = decode_jwt(token)['user_id']
+    db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id and User.id == user_id).first()
     if db_playlist is None:
         raise HTTPException(status_code=404, detail="Playlist not found")
 
     return db_playlist
 
-@app.put("/user/{user_id}/playlists/{playlist_id}", tags=["Playlist"])
-async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], r: Request, user_id: str, playlist_id: UUID, playlist_name: str, db: Session = Depends(get_db)):
-    if not is_same_user(user_id, token):
-        raise HTTPException(status_code=403, detail="Token User ID mismatch")
-    
-    db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
+@app.put("/me/playlists/{playlist_id}", tags=["Playlist"])
+async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], playlist_id: UUID, playlist_name: str, db: Session = Depends(get_db)):
+    user_id = decode_jwt(token)['user_id']
+    db_playlist = db.query(Playlist).filter(Playlist.id == playlist_id and User.id == user_id).first()
     if db_playlist is None:
         raise HTTPException(status_code=404, detail="Playlist not found")
     db_playlist.name = playlist_name
@@ -152,11 +139,10 @@ async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], r: R
     return db_playlist
     
 
-@app.get("/users/{user_id}",  tags=["User"])
-async def get_user_info(token: Annotated[str, Depends(JWTBearer())], user_id: str, db: Session = Depends(get_db)):
-    if not is_same_user(user_id, token):
-        raise HTTPException(status_code=403, detail="Token User ID mismatch")
-    
+@app.get("/me",  tags=["User"])
+async def get_user_info(token: Annotated[str, Depends(JWTBearer())], db: Session = Depends(get_db)):
+    user_id = decode_jwt(token)['user_id']
+
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")

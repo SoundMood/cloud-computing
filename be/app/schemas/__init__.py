@@ -4,21 +4,6 @@ from typing import List, Annotated
 from fastapi import Form, UploadFile, File
 import inspect
 
-# TODO: add __init__ method to the class?
-
-class PostSchema(BaseModel):
-    id: int = Field(default=None)
-    title: str = Field(...)
-    content: str = Field(...)
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "title": "Securing FastAPI applications with JWT.",
-                "content": "In this tutorial, you'll learn how to secure your application by enabling authentication using JWT. We'll be using PyJWT to sign, encode and decode JWT tokens...."
-            }
-        }
-
 
 # class UserLoginSchema(BaseModel):
 #     email: EmailStr = Field(...)
@@ -64,7 +49,6 @@ class User(BaseModel):
     registered_at: str
 
 class RequestUser(BaseModel):
-    id: str
     access_token: str
     # refresh_token: str
     # class Config:
