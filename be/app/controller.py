@@ -4,7 +4,7 @@ import app.settings as settings
 from app.db.redis import rdb as redis_client
 
 subscriber = pubsub_v1.SubscriberClient().from_service_account_json('acc-key.json')
-subscription_path = subscriber.subscription_path(settings.PROJECT_ID, 'return-predict')
+subscription_path = subscriber.subscription_path(settings.PROJECT_ID, 'plz-predict')
 
 def publish_message(id, message_data):
     publisher = pubsub_v1.PublisherClient().from_service_account_json('acc-key.json')
