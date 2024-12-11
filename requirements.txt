@@ -1,5 +1,6 @@
 fastapi[standard]>=0.113.0
 google-cloud-storage
+google-cloud-pubsub
 mtcnn>=1.0.0
 numpy>=1.21.5
 Pillow>=9.0.1
