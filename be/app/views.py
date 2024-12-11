@@ -71,6 +71,8 @@ async def predict_mood_and_generate_playlist(
     try:
         if image.content_type not in ["image/jpeg", "image/png"]:
             raise HTTPException(status_code=400, detail="Invalid file type. Only accept JPEG or PNG")
+
+        get_current_user(access_token)
         
         user_id = decode_jwt(token)['user_id']
         file_content = await image.read()    
