@@ -81,7 +81,8 @@ async def predict_mood_and_generate_playlist(
 
         # TODO: Imple ML dan Remove photo_url column
         message_data = {
-            "image_name": gcs_name
+            "image_name": gcs_name,
+            "access_token": access_token
         }
 
         publish_message(id, message_data)
