@@ -1,14 +1,7 @@
-FROM python:3.10-slim
-
-ENV PYTHONUNBUFFERED True
-
-ENV APP_HOME /app
-WORKDIR $APP_HOME
-COPY . ./
-
-ENV PORT 1234
-
-RUN pip install --no-cache-dir -r requirements.txt
-
-# As an example here we're running the web service with one worker on uvicorn.
-CMD exec uvicorn main:views --host 0.0.0.0 --port ${PORT} --workers 1
+FROM python:3.10
+WORKDIR /code
+COPY ./requirements.txt /code/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+COPY ./app /code/app
+COPY ./main.py /code/
+CMD ["fastapi", "run", "main.py", "--port", "80"]
