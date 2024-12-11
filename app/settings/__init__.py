@@ -1,12 +1,13 @@
+import os
 from decouple import config
 
-JWT_SECRET = config("JWT_SECRET")
-SHA_SECRET = config("SHA_SECRET")
-JWT_ALGORITHM = config("ALGORITHM")
-REDIS_HOST = config("REDIS_HOST")
-REDIS_PORT = config("REDIS_PORT")
-DATABASE_URL = config("DATABASE_URL")
-BUCKET_NAME = config("BUCKET_NAME")
-HOST = config("HOST")
-PROJECT_ID = config("PROJECT_ID")
-TOPIC_NAME = config("TOPIC_NAME")
+JWT_SECRET = os.getenv("JWT_SECRET")
+SHA_SECRET = os.getenv("SHA_SECRET")
+JWT_ALGORITHM = os.getenv("ALGORITHM")
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT")
+DATABASE_URL = os.getenv("DATABASE_URL")
+BUCKET_NAME = os.getenv("BUCKET_NAME")
+HOST = os.getenv("HOST")
+PROJECT_ID = os.getenv("PROJECT_ID")
+TOPIC_NAME = os.getenv("TOPIC_NAME")
