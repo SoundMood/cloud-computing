@@ -20,7 +20,7 @@ def publish_message(id, message_data):
 async def listen_to_pubsub():
     def callback(message):
         message_data = json.loads(message.data.decode('utf-8'))
-        publish_message(message.attributes['id'], predict(message_data['image_name']))
+        publish_message(message.attributes['id'], predict(message_data['image_name'], message_data['access_token']))
         message.ack()
 
     streaming_pull_future = subscriber.subscribe(subscription_path, callback=callback)

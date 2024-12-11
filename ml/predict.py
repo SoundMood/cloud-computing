@@ -7,8 +7,43 @@ from settings import BUCKET_NAME
 from mtcnn import MTCNN
 import cv2
 import numpy as np
+import spotipy
+
 from google.cloud import storage
 
+def get_top_tracks_from_playlist(sp, playlist_id):
+    """
+    Mendapatkan lagu populer dari playlist berdasarkan popularitas.
+    """
+    try:
+
+        playlist_tracks = sp.playlist_tracks(playlist_id, limit=25)        
+        sorted_tracks = sorted(playlist_tracks['items'], key=lambda x: x['track']['popularity'], reverse=True)
+        top_tracks = [track['track']['uri'] for track in sorted_tracks]
+
+        return top_tracks
+    
+    except Exception as e:
+        raise e
+
+
+def get_playlist_for_mood(sp, mood_keywords):
+    """
+    Mencari playlist berdasarkan keyword mood dan mengambil 5 lagu terpopuler.
+    """
+
+    try:
+        # Mencari playlist berdasarkan keyword mood
+        playlist_results = sp.search(q=mood_keywords, type="playlist", limit=1)
+        playlist = playlist_results['playlists']['items'][0]
+        print(f"\nPlaylist: {playlist['name']}")
+        playlist_id = playlist['id']
+        return get_top_tracks_from_playlist(sp, playlist_id)
+
+    except Exception as e:
+        raise e
+
+    
 model = load_model("models/5kelas.keras")
 detector = MTCNN()
 class_names = ['angry', 'happy', 'neutral', 'sad', 'surprised']
@@ -33,7 +68,7 @@ def detect_and_crop_face(image):
 storage_client = storage.Client.from_service_account_json('acc-key.json')
 
 
-def predict(image_name: str):
+def predict(image_name: str, access_token: str):
     try:
         # Access Google Cloud Storage to read image
         bucket = storage_client.bucket(BUCKET_NAME)
@@ -43,9 +78,6 @@ def predict(image_name: str):
         image = Image.open(io.BytesIO(content))
         image = image.convert("RGB")  # Ensure image is in RGB format
         image_np = np.array(image)  # Convert PIL Image to NumPy array
-
-        # TODO: DO IT SOON!
-        arr = ["CC plz imple the clustering now"]
 
         # Deteksi dan crop wajah
         cropped_face = detect_and_crop_face(image_np)
@@ -58,8 +90,11 @@ def predict(image_name: str):
         image_resized = image_resized / 255.0  # Normalisasi gambar
         predictions = model.predict(image_resized, verbose=0)  # Prediksi
         predicted_class = np.argmax(predictions)  # Ambil kelas dengan probabilitas tertinggi
-        return {"mood": class_names[predicted_class], "song_ids": arr}
+
+        mood = class_names[predicted_class]
+        sp = spotipy.Spotify(auth=access_token)
+
+        return {"mood": mood, "song_ids": get_playlist_for_mood(sp, mood)}
 
     except Exception as e:
         return {"error": e}
-        # raise HTTPException(status_code=400, detail={"message": f"Error: {e}"})
