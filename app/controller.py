@@ -5,11 +5,11 @@ from app.db.redis import rdb as redis_client
 from app.db import get_db
 from app.models import Playlist
 from app.schemas import Playlist as PlaylistSchema
-subscriber = pubsub_v1.SubscriberClient().from_service_account_json('acc-key.json')
+subscriber = pubsub_v1.SubscriberClient()
 subscription_path = subscriber.subscription_path(settings.PROJECT_ID, 'plz-predict')
 
 def publish_message(id, message_data):
-    publisher = pubsub_v1.PublisherClient().from_service_account_json('acc-key.json')
+    publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(settings.PROJECT_ID, settings.TOPIC_NAME)
 
     message_json = json.dumps(message_data)

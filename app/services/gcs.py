@@ -4,8 +4,7 @@ import uuid
 
 def upload(file: bytes, id: uuid.UUID = None) -> str:
 
-    storage_client = storage.Client.from_service_account_json(
-        'acc-key.json')
+    storage_client = storage.Client()
     
     # TODO: Add the final bucket name to the environment variables
     # TODO: Is it really png?
