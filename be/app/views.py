@@ -21,9 +21,12 @@ import time
 app = FastAPI()
 
 def get_current_user(access_token: str):
-    sp = spotipy.Spotify(auth=access_token)
-    current_user = sp.current_user()
-    return current_user
+    try:
+        sp = spotipy.Spotify(auth=access_token)
+        current_user = sp.current_user()
+        return current_user
+    except SpotifyException as e:
+        raise e
 
 # TODO: Complete the documentation (Response, dll)
 @app.post("/auth/token", tags=["Authorization"])
@@ -42,7 +45,7 @@ async def create_token(user: Annotated[RequestUser, Form()], db: Session = Depen
 
         return signObject
 
-    except SpotifyException as e:
+    except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
 def create_playlist(playlist: PlaylistCreate, db = next(get_db())):
@@ -66,7 +69,7 @@ async def predict_mood_and_generate_playlist(
     image: Annotated[UploadFile, File()]
 ):
     try:
-        
+
         user_id = decode_jwt(token)['user_id']
         file_content = await image.read()    
         id = uuid.uuid4()
@@ -94,7 +97,9 @@ async def predict_mood_and_generate_playlist(
             "playlist_id": id,
             "message": "In progress"
         }
-    
+
+    except SpotifyException as e:
+        raise HTTPException(status_code=500, detail={"message": "Access token expired or not enough scope"})
     except HTTPException as e:
         raise e
     except Exception as e:
