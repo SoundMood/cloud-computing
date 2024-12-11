@@ -69,7 +69,7 @@ async def predict_mood_and_generate_playlist(
     image: Annotated[UploadFile, File(...)]
 ):
     try:
-        if image.file._file is None or image.file._file.tell() == 0:
+        if image.file._file.tell() == 0:
             raise HTTPException(status_code=400, detail="No file attached")
 
         if image.content_type not in ["image/jpeg", "image/png"]:
