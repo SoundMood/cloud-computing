@@ -1,6 +1,7 @@
 alembic>=1.14.0
 cryptocode>=0.1
 fastapi[standard]>=0.115.6
+jwt
 protobuf>=5.29.1
 psycopg2
 pydantic>=2.10.3
