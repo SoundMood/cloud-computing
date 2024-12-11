@@ -2,6 +2,8 @@ import uvicorn
 import threading
 import asyncio
 from app.controller import listen_to_pubsub
+from app.views import app as fastapi_app
+import app
 
 # Create a threading event to signal the listener thread to stop
 stop_event = threading.Event()
