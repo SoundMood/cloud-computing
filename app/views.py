@@ -17,8 +17,9 @@ from app.db import get_db
 import spotipy
 from spotipy.exceptions import SpotifyException
 import time
+import main
 
-app = FastAPI()
+app = main.app
 
 def get_current_user(access_token: str):
     try:
