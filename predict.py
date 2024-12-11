@@ -1,9 +1,9 @@
 import io
+import os
 from PIL import Image
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from settings import BUCKET_NAME
 from mtcnn import MTCNN
 import cv2
 import numpy as np
@@ -64,13 +64,13 @@ def detect_and_crop_face(image):
 
 # NEXT: Imple ML part and done
 
-storage_client = storage.Client.from_service_account_json('acc-key.json')
+storage_client = storage.Client()
 
 
 def predict(image_name: str, access_token: str):
     try:
         # Access Google Cloud Storage to read image
-        bucket = storage_client.bucket(BUCKET_NAME)
+        bucket = storage_client.bucket(os.getenv('BUCKET_NAME'))
         blob = bucket.blob(image_name)
         content = blob.download_as_bytes()
 

@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     try:
         # Run the FastAPI application
-        uvicorn.run("main", host="0.0.0.0", port=80, reload=True)
+        uvicorn.run("main", host="0.0.0.0", port=8080, reload=True)
     except KeyboardInterrupt:
         # Signal the listener thread to stop
         stop_event.set()
