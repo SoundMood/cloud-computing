@@ -36,7 +36,6 @@ def get_playlist_for_mood(sp, mood_keywords):
         # Mencari playlist berdasarkan keyword mood
         playlist_results = sp.search(q=mood_keywords, type="playlist", limit=1)
         playlist = playlist_results['playlists']['items'][0]
-        print(f"\nPlaylist: {playlist['name']}")
         playlist_id = playlist['id']
         return get_top_tracks_from_playlist(sp, playlist_id)
 

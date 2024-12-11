@@ -1,6 +1,10 @@
+import uvicorn
 import threading
 import asyncio
+from fastapi import FastAPI
 from pubsub import listen_to_pubsub
+
+app = FastAPI()
 
 # Create a threading event to signal the listener thread to stop
 stop_event = threading.Event()
@@ -13,14 +17,13 @@ def start_pubsub_listener():
     asyncio.run(listen_to_pubsub_with_stop())
 
 if __name__ == "__main__":
-    try:
-        # Run the Pub/Sub listener in a separate thread
-        listener_thread = threading.Thread(target=start_pubsub_listener)
-        listener_thread.start()
+    # Run the Pub/Sub listener in a separate thread
+    listener_thread = threading.Thread(target=start_pubsub_listener)
+    listener_thread.start()
 
-        # Keep the main thread running, waiting for a KeyboardInterrupt (Ctrl+C)
-        while True:
-            pass
+    try:
+        # Run the FastAPI application
+        uvicorn.run("main", host="0.0.0.0", port=80, reload=True)
     except KeyboardInterrupt:
         # Signal the listener thread to stop
         stop_event.set()
