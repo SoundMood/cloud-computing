@@ -73,7 +73,7 @@ async def predict_mood_and_generate_playlist(
             raise HTTPException(status_code=400, detail="Invalid file type. Only accept JPEG or PNG")
 
         get_current_user(access_token)
-        
+
         user_id = decode_jwt(token)['user_id']
         file_content = await image.read()    
         id = uuid.uuid4()
@@ -103,7 +103,7 @@ async def predict_mood_and_generate_playlist(
         }
 
     except SpotifyException as e:
-        raise HTTPException(status_code=500, detail={"message": "Access token expired or not enough scope"})
+        raise HTTPException(status_code=400, detail={"message": "Access token expired or not enough scope"})
     except HTTPException as e:
         raise e
     except Exception as e:
