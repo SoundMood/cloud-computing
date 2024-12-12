@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, Response, status, HTTPException, Form, UploadFile, File
 from typing import Annotated
 from app.auth.bearer import JWTBearer
+from app.middleware import LimitUploadSize
 from app.db.redis import rdb as redis_client
 from app.auth.handler import sign_jwt, decode_jwt
 from app.controller import publish_message
@@ -20,6 +21,8 @@ import time
 import main
 
 app = main.app
+
+app.add_middleware(LimitUploadSize, max_upload_size=5_000_000)  # ~5MB
 
 def get_current_user(access_token: str):
     try:
