@@ -32,6 +32,7 @@ async def pubsub_push(request: Request, TOKEN: str):
 
         return {"status": "success"}
     except Exception as e:
+        print(f"Error processing Pub/Sub message: {e}")
         raise HTTPException(status_code=400, detail=f"Error processing Pub/Sub message: {e}")
 
 if __name__ == "__main__":
