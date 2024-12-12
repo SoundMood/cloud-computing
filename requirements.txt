@@ -1,3 +1,4 @@
+base64
 fastapi[standard]>=0.113.0
 google-cloud-storage
 google-cloud-pubsub

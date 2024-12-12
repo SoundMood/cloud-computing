@@ -33,7 +33,7 @@ from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
 import json
 import uvicorn
-
+import base64
 app = FastAPI()
 
 class PubSubMessage(BaseModel):
@@ -47,10 +47,18 @@ async def pubsub_push(request: Request):
         print(body)
         pubsub_message = PubSubMessage(**body)
         message_data = pubsub_message.message.get("data")
+        attributes = pubsub_message.message.get("attributes", {})
+        message_id = attributes.get("id")
+        message_data = base64.b64decode(message_data).decode('utf-8')        
+        print(f"Attributes: {attributes}")
+        print(f"Message ID: {message_id}")
+        
         print(message_data)
         if message_data:
             decoded_message = json.loads(message_data)
             print(f"Received message: {decoded_message}")
+            print(f"image_name: {decoded_message["image_name"]}")
+            
         else:
             print("Received message with no data.")
         return {"status": "success"}
