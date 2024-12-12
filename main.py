@@ -53,11 +53,9 @@ async def pubsub_push(request: Request):
         print(f"Attributes: {attributes}")
         print(f"Message ID: {message_id}")
         
-        print(message_data)
         if message_data:
             decoded_message = json.loads(message_data)
             print(f"Received message: {decoded_message}")
-            print(f"image_name: {decoded_message["image_name"]}")
             
         else:
             print("Received message with no data.")
