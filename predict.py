@@ -34,11 +34,15 @@ def get_playlist_for_mood(sp, mood_keywords):
 
     try:
         # Mencari playlist berdasarkan keyword mood
-        playlist_results = sp.search(q=mood_keywords, type="playlist", limit=1)
+        playlist_results = sp.search(q=mood_keywords, type="playlist", limit=10)
         
+        playlist_id = None
         playlist = playlist_results['playlists']['items'][0]
-        playlist_id = playlist['id']
-        print("HI", playlist_id)
+        for playlist in playlist_results['playlists']['items']:
+            if playlist:
+                playlist_id = playlist['id']
+    
+        
         return get_top_tracks_from_playlist(sp, playlist_id)
 
     except Exception as e:

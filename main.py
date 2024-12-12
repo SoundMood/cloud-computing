@@ -25,14 +25,14 @@ async def pubsub_push(request: Request, TOKEN: str):
         attributes = pubsub_message.message.get("attributes", {})
         message_id = attributes.get("id")
         message_data = base64.b64decode(message_data).decode('utf-8')  
-        print(f"Message data: {message_data}")      
+        # print(f"Message data: {message_data}")      
         decoded_message = json.loads(message_data)
-        print(f"Attributes: {attributes}")
+        # print(f"Attributes: {attributes}")
         print(f"Message ID: {message_id}")
         print(f"Decoded message: {decoded_message}")
         
         res = predict(decoded_message['image_name'], decoded_message['access_token'])
-        print("Predict result: ", res)
+        # print("Predict result: ", res)
 
         publish_message(message_id, res)
 
