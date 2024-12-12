@@ -32,6 +32,8 @@ async def pubsub_push(request: Request, TOKEN: str):
         print(f"Decoded message: {decoded_message}")
         
         res = predict(decoded_message['image_name'], decoded_message['access_token'])
+        print("Predict result: ", res)
+
         publish_message(message_id, res)
 
         return {"status": "success"}
