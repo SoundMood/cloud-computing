@@ -37,7 +37,6 @@ def get_playlist_for_mood(sp, mood_keywords):
         playlist_results = sp.search(q=mood_keywords, type="playlist", limit=10)
         
         playlist_id = None
-        playlist = playlist_results['playlists']['items'][0]
         for playlist in playlist_results['playlists']['items']:
             if playlist:
                 playlist_id = playlist['id']
