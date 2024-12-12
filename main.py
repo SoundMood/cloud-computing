@@ -5,6 +5,7 @@ from predict import predict
 import json
 import uvicorn
 import base64
+import settings
 
 app = FastAPI()
 
@@ -12,9 +13,12 @@ class PubSubMessage(BaseModel):
     message: dict
     subscription: str
 
-@app.post("/push")
-async def pubsub_push(request: Request):
+@app.post("/push/")
+async def pubsub_push(request: Request, TOKEN: str):
     try:
+        if TOKEN != settings.REQUEST_TOKEN:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        
         body = await request.json()
         pubsub_message = PubSubMessage(**body)
         message_data = pubsub_message.message.get("data")
