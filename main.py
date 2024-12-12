@@ -29,7 +29,10 @@ async def pubsub_push(request: Request, TOKEN: str):
         decoded_message = json.loads(message_data)
         print(f"Attributes: {attributes}")
         print(f"Message ID: {message_id}")
-        publish_message(message_id, predict(decoded_message['image_name'], decoded_message['access_token']))
+        print(f"Decoded message: {decoded_message}")
+        
+        res = predict(decoded_message['image_name'], decoded_message['access_token'])
+        publish_message(message_id, res)
 
         return {"status": "success"}
     except Exception as e:

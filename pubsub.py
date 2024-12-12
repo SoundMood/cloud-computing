@@ -1,7 +1,6 @@
 from google.cloud import pubsub_v1
 import json
 import settings
-from predict import predict
 
 def publish_message(id, message_data):
     publisher = pubsub_v1.PublisherClient()
