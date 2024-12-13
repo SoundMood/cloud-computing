@@ -9,7 +9,7 @@
 
 </div>
 
-> Base url of this service is: http://localhost:8000/
+> Base url of this service is: http://localhost:8081/
 
 The service available:
 
@@ -45,8 +45,16 @@ The service available:
 In order to run this project, you need to configure the following environment variables:
 
 ```bash
-
-
+  DATABASE_URL: {database_url}
+  JWT_SECRET: {your jwt secret}
+  SHA_SECRET: {your sha key}
+  REDIS_HOST: {your redis ip}
+  REDIS_PORT: {your redis port}
+  BUCKET_NAME: {your gcp bucket}
+  PROJECT_ID: {your gcp projec id}
+  TOPIC_NAME: be-ml
+  ALGORITHM: HS256
+  HOST: 0.0.0.0
 ```
 
 Then you can use the following image to create your own database:
