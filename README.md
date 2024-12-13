@@ -64,7 +64,7 @@ Then you can use the following image to create your own database:
 
 This Web service uses Postman to test.
 
-- You can download the Postman documentation [here]().
+- You can download the Postman documentation [here](https://documenter.getpostman.com/view/40378264/2sAYHxnP79).
 
 If you want to contribute to this project, please contact me.
 
