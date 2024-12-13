@@ -1,17 +1,14 @@
-# cloud-computing
 <p align="center">
   <img src="assets/soundmood.png" alt="logo" height="180" />
 </p>
 
-<h1 align="center">SoundMood</h1>
+<h1 align="center">SoundMood CC Service</h1>
 
 <div align="center">
 
 </div>
 
 SoundMood is an application that allows you to predict the mood by uploading image of face, SoundMood predict the mood of the image, and return the most fitting playlist based on the uploaded image.
-
-> Base url of this service is: http://localhost:8081/
 
 The service available:
 
@@ -29,6 +26,17 @@ The service available:
 - User
   <pre>GET /me</pre>
 
+# Tools
+- [Google Cloud](https://cloud.google.com/)
+- [Python](https://www.python.org/)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Spotify Web API](https://developer.spotify.com/documentation/web-api)
+- [Spotipy](https://github.com/spotipy-dev/spotipy)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Redis](https://redis.io/)
+- [Docker](https://www.docker.com/)
+- [Postman](https://www.postman.com/)
+
 # Quick Look
 
 ## Architecture
@@ -39,34 +47,39 @@ The service available:
 
 # Authentications
 
-This service is using token for authentication, your email need to be registered to get access token for using this service, the acess token is valid for only 60 minutes, you need renew the access token by requesting with /get/auth
+This service is using Spotify access token for getting an JWT token, your email need to be registered to Spotify Developer dashboard to get JWT token for using this service. Be aware that the JWT token is valid for only 1 day so you need to renew the access token by requesting GET /auth/token.
 
-# Environment
+# Installation
+1. Setup Memorystore for Redis Cluster, Cloud SQL, and Cloud Storage in your project.
+2. Create database `soundmood` in your Cloud SQL.
+3. Also, setup Pub/Sub with a topic name with the subscriptions below:
+   * `plz-predict` with pull subscription, to handle output from ML service to BE service. 
+   * `get-predict` with push subscription, to handle request from BE service.
 
-In order to run this project, you need to configure the following environment variables:
+4. Configure the following environment variables:
 
 ```bash
-  DATABASE_URL: {database_url}
+  DATABASE_URL: {database_url to soundmood db}
   JWT_SECRET: {your jwt secret}
   SHA_SECRET: {your sha key}
   REDIS_HOST: {your redis ip}
   REDIS_PORT: {your redis port}
   BUCKET_NAME: {your gcp bucket}
-  PROJECT_ID: {your gcp projec id}
+  PROJECT_ID: {your gcp project id}
   TOPIC_NAME: {your pub/sub topic name}
   ALGORITHM: HS256
   HOST: 0.0.0.0
 ```
 
-Then you can use the following image to create your own database:
+5. Clone this repository and build container image for `be` and `ml` branch.
+
+6. Deploy the Cloud Run using above image with the environment variables mentioned above.
 
 # Testing
 
-This Web service uses Postman to test.
+This service uses Postman to do API testing.
 
 - You can download the Postman documentation [here](https://documenter.getpostman.com/view/40378264/2sAYHxnP79).
-
-If you want to contribute to this project, please contact me.
 
 ## Contributors
 
