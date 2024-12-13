@@ -98,9 +98,11 @@ async def predict_mood_and_generate_playlist(
 
         create_playlist(playlist)
 
-        # redis_client.set(f'playlist:{id}', "in progress")
-        # redis_client.expire(f'playlist:{id}', 3600)
+        redis_client.set(f'playlist:{id}', "in progress")
+        redis_client.expire(f'playlist:{id}', 300)
 
+        redis_client.set(f'playlist:{id}:user', user_id)
+        
         r.status_code = status.HTTP_202_ACCEPTED
         return {
             "playlist_id": id,
@@ -125,8 +127,11 @@ async def read_playlists_by_user(token: Annotated[str, Depends(JWTBearer())], db
 
 @app.get("/me/playlists/{playlist_id}", tags=["Playlist"])
 async def get_playlist_by_id(token: Annotated[str, Depends(JWTBearer())], playlist_id: UUID, db: Session = Depends(get_db)):
-    # TODO: Check if data still processed
 
+    if redis_client.exists(f'playlist:{playlist_id}:user'):
+        if redis_client.get(f'playlist:{playlist_id}:user') != decode_jwt(token)['user_id']:
+            raise HTTPException(status_code=404, detail="Playlist not found")
+        
     if redis_client.exists(f'playlist:{playlist_id}'):
         if redis_client.get(f'playlist:{playlist_id}') == "in progress":
             raise HTTPException(status_code=202, detail="Playlist is still being processed")
@@ -144,9 +149,12 @@ async def get_playlist_by_id(token: Annotated[str, Depends(JWTBearer())], playli
         raise HTTPException(status_code=404, detail="Playlist not found")
     
     if db_playlist.is_completed == False:
+        redis_client.set(f'playlist:{playlist_id}', "in progress")
+        redis_client.expire(f'playlist:{playlist_id}', 300)
         raise HTTPException(status_code=202, detail="Playlist is still being processed")
     
     if db_playlist.is_completed == True and db_playlist.mood is None:
+        redis_client.set(f'playlist:{playlist_id}', "face not detected")
         raise HTTPException(status_code=500, detail="Face not detected. Please try again")
     
     return db_playlist
