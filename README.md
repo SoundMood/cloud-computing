@@ -32,7 +32,7 @@ The service available:
 ## Architecture
 
 <p align="center">
-  <img src="assets/architecture.jpeg" alt="architecture diagram" />
+  <img src="assets/architecture.png" alt="architecture diagram" />
 </p>
 
 # Authentications
