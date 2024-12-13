@@ -83,7 +83,7 @@ CC member is responsible for the development of the API service and deployment o
 
 <p>Tarisa Nur Safitri</p>
 
-<p>TSanjukin Ndube Pinem</p>
+<p>Sanjukin Ndube Pinem</p>
 
 <p>Antonius Wisang Bayu Nugraha</p>
 
