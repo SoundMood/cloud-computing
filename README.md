@@ -74,10 +74,22 @@ If you want to contribute to this project, please contact me.
 CC member is responsible for the development of the API service and deployment of the model. In sort, in this project CC is responsible for Backend, infrastructure, and DevOps.
 #### Individuals
 
+<p>Vanes Angelo</p>
 
+<p>Restu Dermawan Muhammad</p>
 
 ### ML Member
 #### Individuals
 
+<p>Tarisa Nur Safitri</p>
+
+<p>TSanjukin Ndube Pinem</p>
+
+<p>Antonius Wisang Bayu Nugraha</p>
+
 ### MD Member
 #### Individuals
+
+<p>Reisya Pratama</p>
+
+<p>I Wayan Satya Widhya Putra Pratama</p>
