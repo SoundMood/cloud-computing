@@ -1,6 +1,6 @@
 # cloud-computing
 <p align="center">
-  <img src="image/soundmood.png" alt="logo" height="180" />
+  <img src="assets/soundmood.png" alt="logo" height="180" />
 </p>
 
 <h1 align="center">SoundMood</h1>
@@ -32,7 +32,7 @@ The service available:
 ## Architecture
 
 <p align="center">
-  <img src="image/architecture.png" alt="architecture diagram" />
+  <img src="assets/architecture.jpeg" alt="architecture diagram" />
 </p>
 
 # Authentications
