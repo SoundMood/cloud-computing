@@ -9,6 +9,8 @@
 
 </div>
 
+SoundMood is an application that allows you to predict the mood by uploading image of face, SoundMood predict the mood of the image, and return the most fitting playlist based on the uploaded image.
+
 > Base url of this service is: http://localhost:8081/
 
 The service available:
@@ -37,8 +39,7 @@ The service available:
 
 # Authentications
 
-
-
+This service is using token for authentication, your email need to be registered to get access token for using this service, the acess token is valid for only 60 minutes, you need renew the access token by requesting with /get/auth
 
 # Environment
 
@@ -59,10 +60,6 @@ In order to run this project, you need to configure the following environment va
 
 Then you can use the following image to create your own database:
 
-
-### Dependency
-
-
 # Testing
 
 This Web service uses Postman to test.
@@ -70,9 +67,6 @@ This Web service uses Postman to test.
 - You can download the Postman documentation [here]().
 
 If you want to contribute to this project, please contact me.
-
-# Pull Requests
-
 
 ## Contributors
 
