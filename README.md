@@ -52,7 +52,7 @@ In order to run this project, you need to configure the following environment va
   REDIS_PORT: {your redis port}
   BUCKET_NAME: {your gcp bucket}
   PROJECT_ID: {your gcp projec id}
-  TOPIC_NAME: be-ml
+  TOPIC_NAME: {your pub/sub topic name}
   ALGORITHM: HS256
   HOST: 0.0.0.0
 ```
