@@ -144,7 +144,7 @@ async def get_playlist_by_id(token: Annotated[str, Depends(JWTBearer())], playli
         return json_object
     
     user_id = decode_jwt(token)['user_id']
-    db_playlist = db.query(Playlist).filter(and_(Playlist.id == playlist_id, User.id == user_id)).first()
+    db_playlist = db.query(Playlist).filter(and_(Playlist.id == playlist_id, Playlist.id == user_id)).first()
     if db_playlist is None:
         raise HTTPException(status_code=404, detail="Playlist not found")
     
@@ -162,7 +162,7 @@ async def get_playlist_by_id(token: Annotated[str, Depends(JWTBearer())], playli
 @app.put("/me/playlists/{playlist_id}", tags=["Playlist"])
 async def update_playlist_name(token: Annotated[str, Depends(JWTBearer())], playlist_id: UUID, playlist_name: str, db: Session = Depends(get_db)):
     user_id = decode_jwt(token)['user_id']
-    db_playlist = db.query(Playlist).filter(and_(Playlist.id == playlist_id, User.id == user_id)).first()
+    db_playlist = db.query(Playlist).filter(and_(Playlist.id == playlist_id, Playlist.id == user_id)).first()
     if db_playlist is None:
         raise HTTPException(status_code=404, detail="Playlist not found")
     
