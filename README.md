@@ -14,19 +14,18 @@
 The service available:
 
 - Authorization
-  <pre>POST </pre>
+  <pre>POST /auth/token</pre>
 
 - Predictions
-  <pre>POST /predictions/cassava</pre>
-  <pre>POST /predictions/rice</pre>
-  <pre>POST /predictions/tomato</pre>
+  <pre>POST /me/predict</pre>
 
 - Playlist
-
-- Classifications
-  <pre>POST /classifications/vegetable</pre>
+  <pre>GET /me/playlist</pre>
+  <pre>GET /me/playlist/{playlist_id}</pre>
+  <pre>PUT /me/playlist/{playlist_id}</pre>
 
 - User
+  <pre>GET /me</pre>
 
 # Quick Look
 
